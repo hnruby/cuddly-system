@@ -1,27 +1,69 @@
-import './App.css';
+import React from "react";
+import { useState, useEffect } from "react";
+
+const api = {
+  key: process.env.REACT_APP_API_KEY,
+  base: "https://api.openweathermap.org/data/2.5/",
+};
 
 function App() {
+  const [searchInput, setSearchInput] = useState("");
+  const [searchCity, setSearchCity] = useState("");
+  const [weatherInfo, setWeatherInfo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, seterrorMessage] = useState("");
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      if (!searchCity) return;
+      setLoading(true);
+      try {
+        const url = `${api.base}weather?q=${searchCity}&units=metric&APPID=${api.key}`;
+
+        const reponse = await fetch(url);
+        const data = await reponse.json();
+        if (reponse.ok) {
+          setWeatherInfo(
+            `${data.name},${data.sys.country},${data.weather[0].description},${data.main.temp}`
+          );
+          seterrorMessage("");
+        } else {
+          seterrorMessage(data.message);
+        }
+      } catch (error) {
+        seterrorMessage(error.message);
+      }
+      setLoading(false);
+    };
+    fetchWeatherData();
+  }, [searchCity]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSearchCity(searchInput);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src="Octocat.png" className="App-logo" alt="logo" />
-        <p>
-          GitHub Codespaces <span className="heart">♥️</span> React
-        </p>
-        <p className="small">
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </p>
-      </header>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="city name"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+        <button>Search</button>
+      </form>
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          {errorMessage ? (
+            <div style={{ color: "red" }}>{errorMessage}</div>
+          ) : (
+            <div>{weatherInfo}</div>
+          )}
+        </>
+      )}
     </div>
   );
 }
